@@ -1,0 +1,13 @@
+Manifest-Version: 1.0
+Plugin-Class: com.example.TabPlugin
+Plugin-Version: 0.1.2
+Morpheus-Name: tab
+Morpheus-Organization: morpheus
+Morpheus-Code: tab-plugin
+Morpheus-Description: Custom instance tab (example)
+Morpheus-Logo: assets/morpheus.svg
+Morpheus-Logo-Dark: assets/morpheus.svg
+Morpheus-Labels: Plugin
+Morpheus-Repo: https://github.com/gomorpheus/example
+Morpheus-Min-Appliance-Version: 8.0.0
+

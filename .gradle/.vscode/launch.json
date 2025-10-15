@@ -1,0 +1,24 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Run Groovy Plugin (Gradle)",
+      "request": "launch",
+      "mainClass": "com.example.TabPlugin",
+      "projectName": "tab",
+      "cwd": "${workspaceFolder}",
+      "vmArgs": "-Dfile.encoding=UTF-8",
+      "args": "",
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "java",
+      "name": "Run Groovy Script",
+      "request": "launch",
+      "mainClass": "groovy.ui.GroovyMain",
+      "args": "src/main/groovy/com/example/TabPlugin.groovy",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

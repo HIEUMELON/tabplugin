@@ -1,0 +1,133 @@
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven { url "https://plugins.gradle.org/m2/" }
+    }
+    dependencies {
+        classpath "com.github.johnrengelman:shadow:8.1.1"
+        classpath "com.morpheusdata:morpheus-plugin-gradle:$morpheusApiVersion"
+        classpath "com.bertramlabs.plugins:asset-pipeline-gradle:$assetPipelineVersion"
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'groovy'
+apply plugin: 'idea'
+apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'asset-pipeline'
+apply plugin: 'com.morpheusdata.morpheus-plugin-gradle'
+
+group = 'com.example'
+// Nếu bạn không set trong gradle.properties thì uncomment để đặt trực tiếp:
+// version = '0.1.2'
+
+// ----------- JAVa 17: ép build ra bytecode tương thích runtime Morpheus 8.x -----------
+java {
+    // Dùng toolchain để đảm bảo always build ở mức Java 17
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+// Cho chắc: tất cả compile task xuất bytecode mức 17
+tasks.withType(JavaCompile).configureEach {
+    options.release = 17
+}
+tasks.withType(GroovyCompile).configureEach {
+    // đảm bảo Groovy compile cũng target 17
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+// --------------------------------------------------------------------------------------
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+configurations {
+    // Giữ 'provided' như template Morpheus (không đóng gói vào shadowJar)
+    provided
+}
+
+dependencies {
+    // API Morpheus để compile (không đóng gói)
+    provided "com.morpheusdata:morpheus-plugin-api:$morpheusApiVersion"
+
+    // Groovy được Morpheus cung cấp ở runtime → để 'provided'
+    provided "org.codehaus.groovy:groovy-all:$groovyVersion"
+
+    implementation 'commons-beanutils:commons-beanutils:1.9.3'
+    implementation "org.slf4j:slf4j-api:$slf4jVersion"
+    implementation "org.slf4j:slf4j-parent:$slf4jVersion"
+    implementation 'commons-net:commons-net:3.6'
+
+    // test deps
+    testImplementation 'io.reactivex.rxjava3:rxjava:3.1.7'
+    testImplementation 'org.apache.httpcomponents:httpclient:4.5.3'
+    testImplementation 'org.apache.httpcomponents:httpcore:4.4.5'
+    testImplementation "org.slf4j:slf4j-parent:$slf4jVersion"
+    testImplementation "org.codehaus.groovy:groovy-all:$groovyVersion"
+    testImplementation 'net.bytebuddy:byte-buddy:1.9.3'
+    testImplementation 'org.objenesis:objenesis:2.6'
+    testImplementation platform("org.spockframework:spock-bom:$spockVersion")
+    testImplementation "org.spockframework:spock-core"
+    testImplementation "org.spockframework:spock-junit4"
+    testImplementation 'cglib:cglib-nodep:3.2.12'
+}
+
+// Để 'provided' có mặt khi compile (runtime Morpheus sẽ cung cấp)
+sourceSets {
+    main {
+        compileClasspath += configurations.provided
+        // runtimeClasspath += configurations.provided // thường không cần
+    }
+}
+
+// Metadata viết vào JAR
+jar {
+    manifest {
+        attributes(
+            'Plugin-Class'                    : 'com.example.TabPlugin',
+            'Plugin-Version'                  : version,
+            'Morpheus-Name'                   : 'tab',
+            'Morpheus-Organization'           : 'morpheus',
+            'Morpheus-Code'                   : 'tab-plugin',
+            'Morpheus-Description'            : 'Custom instance tab (example)',
+            'Morpheus-Logo'                   : 'assets/morpheus.svg',
+            'Morpheus-Logo-Dark'              : 'assets/morpheus.svg',
+            'Morpheus-Labels'                 : 'Plugin',
+            'Morpheus-Repo'                   : 'https://github.com/gomorpheus/example',
+            // 8.x dùng Java 17 nên min version 8.0.0 là an toàn
+            'Morpheus-Min-Appliance-Version'  : '8.0.0'
+        )
+    }
+}
+
+assets {
+    packagePlugin = false // để false cho plugin
+}
+
+// Tạo console Groovy nếu cần thử nhanh
+task(console, dependsOn: 'classes', type: JavaExec) {
+    main = 'groovy.ui.Console'
+    classpath = sourceSets.main.compileClasspath + sourceSets.main.runtimeClasspath
+}
+
+test {
+    testLogging {
+        exceptionFormat = 'full'
+        showStandardStreams = true
+    }
+}
+
+// build ra shadow jar (all)
+tasks.assemble.dependsOn tasks.shadowJar
+
+// Tùy chọn: cấu hình shadowJar (giữ mặc định nếu không cần đặc biệt)
+shadowJar {
+    archiveClassifier.set('all')
+    // mergeServiceFiles() // bật nếu bạn có service resources cần merge
+    // minimize()          // chỉ dùng khi chắc chắn dependency graph sạch
+}
